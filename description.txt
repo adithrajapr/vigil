@@ -1,0 +1,42 @@
+# VIGIL
+
+### Voter Identity & Integrity Guard for Integrated Logging
+
+**VIGIL** is an AI-assisted voter identity verification and duplicate-voting detection system designed to simulate a secure digital polling environment.
+
+The system aims to strengthen voter identity integrity by verifying a voter's identity before voting authorization and maintaining a secure record of voting activity. Using technologies such as facial recognition, voter identification, secure databases, audit logging, and anomaly detection, VIGIL can identify repeated attempts to obtain voting authorization and alert the polling officer.
+
+The project includes a polling-station interface where a simulated voter undergoes identity verification. Once verified, the system checks whether that identity has already been recorded as having voted. If the voter has not previously voted, the system authorizes the simulated voting process and records the event. If a duplicate attempt is detected, voting authorization is denied and the event is recorded as a security incident.
+
+The system also provides a dashboard for monitoring voter verification, voting activity, duplicate attempts, failed authentication attempts, and other security events.
+
+VIGIL will use synthetic or consent-based test data rather than real voter databases or sensitive government identification data. The project will focus on demonstrating the technical feasibility of identity verification, duplicate-access detection, security monitoring, and privacy-aware biometric authentication in a controlled environment.
+
+### Main Objectives
+
+1. Develop a secure simulated voter identity verification system.
+2. Implement AI-assisted facial identity verification.
+3. Detect repeated attempts to obtain voting authorization.
+4. Maintain tamper-resistant audit records of authentication and voting events.
+5. Provide a real-time monitoring dashboard for polling officers.
+6. Explore anomaly detection for suspicious authentication behavior.
+7. Evaluate the accuracy, security, performance, and limitations of biometric verification.
+8. Demonstrate privacy-conscious handling of biometric information.
+
+### Core Technologies
+
+* Python
+* OpenCV
+* Facial recognition / face embeddings
+* SQLite / PostgreSQL
+* Streamlit
+* FastAPI
+* Pandas
+* NumPy
+* Authentication and encryption mechanisms
+
+### Project Scope
+
+VIGIL is a research and educational prototype intended for simulated environments. It does not replace official election infrastructure, authenticate real voters, or make claims about the integrity of real-world elections.
+
+The project's primary focus is the technical problem of **identity verification and duplicate-access detection in a controlled polling simulation**.
