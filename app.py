@@ -1,9 +1,12 @@
 import streamlit as st
+import cv2
+from pathlib import Path
 
 from db import (
     initialize_database,
     get_voter,
-    register_voter
+    register_voter,
+    mark_face_registered
 )
 
 # Initialize database
@@ -97,3 +100,92 @@ if st.button("Verify Voter"):
 
         else:
             st.error("❌ Voter not found.")
+
+st.divider()
+
+# FACE REGISTRATION
+
+st.divider()
+st.header("Face Registration")
+
+face_id = st.text_input(
+    "Enter registered Student ID for face registration",
+    key="face_register_id"
+)
+
+camera_image = st.camera_input("Capture face")
+
+if st.button("Register Face"):
+    if not face_id.strip():
+        st.warning("Please enter a Student ID.")
+
+    else:
+        voter = get_voter(face_id.strip())
+
+        if voter is None:
+            st.error("Student ID is not registered.")
+
+        elif camera_image is None:
+            st.warning("Please capture a face image first.")
+
+        else:
+            image_bytes = camera_image.getvalue()
+            image_array = __import__("numpy").frombuffer(
+                image_bytes, dtype=__import__("numpy").uint8
+            )
+            frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+
+            if frame is None:
+                st.error("Could not read the captured image.")
+
+            else:
+                detector = cv2.CascadeClassifier(
+                    cv2.data.haarcascades
+                    + "haarcascade_frontalface_default.xml"
+                )
+
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+                faces = detector.detectMultiScale(
+                    gray,
+                    scaleFactor=1.1,
+                    minNeighbors=5,
+                    minSize=(60, 60)
+                )
+
+                if len(faces) == 0:
+                    st.error(
+                        "No face detected. Try again with better lighting "
+                        "and your face clearly visible."
+                    )
+
+                elif len(faces) > 1:
+                    st.error(
+                        "Multiple faces detected. Please capture only "
+                        "the enrolled participant."
+                    )
+
+                else:
+                    student_id = face_id.strip()
+                    save_dir = Path("face_data")
+                    save_dir.mkdir(parents=True, exist_ok=True)
+
+                    image_path = save_dir / f"{student_id}.jpg"
+
+                    success = cv2.imwrite(str(image_path), frame)
+
+                    if not success:
+                        st.error("Could not save the face image.")
+
+                    elif mark_face_registered(student_id):
+                        st.success(
+                            f"Face image saved for Student ID {student_id}."
+                        )
+                        st.image(
+                            str(image_path),
+                            caption="Saved test face image",
+                            width=350
+                        )
+
+                    else:
+                        st.error("Could not update the database.")
