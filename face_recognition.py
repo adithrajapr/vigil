@@ -5,74 +5,112 @@ import numpy as np
 FACE_DIR = Path("face_data")
 
 student_id = input("Enter Student ID: ").strip()
-known_face_path = FACE_DIR / f"{student_id}.jpg"
 
-if not known_face_path.exists():
-    print("No enrolled face found for this Student ID.")
+student_dir = FACE_DIR / student_id
+
+if not student_dir.exists():
+    print("No enrolled face data found.")
     raise SystemExit
 
 detector = cv2.CascadeClassifier(
-    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    cv2.data.haarcascades +
+    "haarcascade_frontalface_default.xml"
 )
 
 recognizer = cv2.face.LBPHFaceRecognizer_create()
 
-known_image = cv2.imread(str(known_face_path))
+training_faces = []
+training_labels = []
 
-if known_image is None:
-    print("Could not read enrolled face image.")
-    raise SystemExit
-
-known_gray = cv2.cvtColor(known_image, cv2.COLOR_BGR2GRAY)
-
-known_faces = detector.detectMultiScale(
-    known_gray,
-    scaleFactor=1.1,
-    minNeighbors=5,
-    minSize=(60, 60)
+image_files = list(
+    student_dir.glob("sample_*.jpg")
 )
 
-if len(known_faces) != 1:
-    print("Could not find exactly one face in the enrolled image.")
+if not image_files:
+    print("No face samples found.")
     raise SystemExit
 
-x, y, w, h = known_faces[0]
-known_face = known_gray[y:y + h, x:x + w]
+for image_path in image_files:
 
-recognizer.train([known_face], np.array([1]))
+    image = cv2.imread(
+        str(image_path),
+        cv2.IMREAD_GRAYSCALE
+    )
 
-print("Enrolled face loaded.")
-print("Starting recognition test.")
+    if image is not None:
+
+        image = cv2.equalizeHist(image)
+
+        image = cv2.resize(
+            image,
+            (200, 200)
+        )
+
+        training_faces.append(image)
+        training_labels.append(1)
+
+if not training_faces:
+    print("Could not load face samples.")
+    raise SystemExit
+
+recognizer.train(
+    training_faces,
+    np.array(training_labels)
+)
+
+print()
+print(f"Loaded {len(training_faces)} face samples.")
+print("Recognition started.")
 print("Press Q to quit.")
 
 camera = cv2.VideoCapture(0)
 
+if not camera.isOpened():
+    print("Camera could not be opened.")
+    raise SystemExit
+
 while True:
+
     success, frame = camera.read()
 
     if not success:
-        print("Could not read camera frame.")
         break
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(
+        frame,
+        cv2.COLOR_BGR2GRAY
+    )
+
+    gray = cv2.equalizeHist(gray)
 
     faces = detector.detectMultiScale(
         gray,
         scaleFactor=1.1,
         minNeighbors=5,
-        minSize=(60, 60)
+        minSize=(80, 80)
     )
 
     for (x, y, w, h) in faces:
 
-        face = gray[y:y + h, x:x + w]
+        face = gray[
+            y:y + h,
+            x:x + w
+        ]
+
+        face = cv2.resize(
+            face,
+            (200, 200)
+        )
 
         label, confidence = recognizer.predict(face)
 
-        if confidence < 70:
-            text = "MATCH"
+        if confidence < 65:
+
+            result = "MATCH"
+
         else:
-            text = "NO MATCH"
+
+            result = "NO MATCH"
 
         cv2.rectangle(
             frame,
@@ -84,15 +122,18 @@ while True:
 
         cv2.putText(
             frame,
-            f"{text} ({confidence:.1f})",
+            f"{result} | Score: {confidence:.1f}",
             (x, y - 10),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
+            0.65,
             (0, 255, 0),
             2
         )
 
-    cv2.imshow("VIGIL - Face Recognition Test", frame)
+    cv2.imshow(
+        "VIGIL - Face Recognition",
+        frame
+    )
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
